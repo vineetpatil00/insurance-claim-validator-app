@@ -1,0 +1,417 @@
+<div class="claim-validator-container">
+  <!-- Header with navigation -->
+  <div class="header-nav">
+    <button class="btn-back" (click)="goToClaimsList()">← Back to Claims</button>
+    <h1 class="page-title">Claim Validation</h1>
+  </div>
+
+  <!-- Step Navigation -->
+  <div class="step-navigation">
+    <div 
+      *ngFor="let step of steps; let i = index" 
+      class="step-item"
+      [class.active]="currentStep === step.number"
+      [class.completed]="currentStep > step.number"
+      [class.disabled]="!canNavigateToStep(step.number)"
+      (click)="canNavigateToStep(step.number) && navigateToStep(step.number)">
+      <div class="step-number">{{ step.number }}</div>
+      <div class="step-title">{{ step.title }}</div>
+    </div>
+  </div>
+
+  <!-- Step Content -->
+  <div class="step-content">
+    <!-- Step 1: Create Claim -->
+    <div *ngIf="currentStep === 1" class="step-panel">
+      <h2 class="step-heading">Create New Claim</h2>
+      <p class="step-description">Start by creating a new insurance claim. You'll be able to upload documents and images in the next steps.</p>
+      
+      <div class="form-section">
+        <div class="form-group">
+          <label for="claimNumber" class="form-label">Claim Number (Optional)</label>
+          <input 
+            type="text" 
+            id="claimNumber"
+            class="form-input"
+            [(ngModel)]="claimNumber"
+            placeholder="Enter claim number"
+            [disabled]="isProcessing">
+        </div>
+
+        <div class="form-group">
+          <label for="description" class="form-label">Description (Optional)</label>
+          <textarea 
+            id="description"
+            class="form-textarea"
+            [(ngModel)]="description"
+            placeholder="Enter claim description"
+            rows="4"
+            [disabled]="isProcessing"></textarea>
+        </div>
+      </div>
+      
+      <div class="action-section">
+        <button 
+          class="btn-primary" 
+          (click)="createClaim()" 
+          [disabled]="isProcessing">
+          {{ isCreatingClaim ? 'Creating...' : 'Create Claim' }}
+        </button>
+      </div>
+
+      <div *ngIf="claimId" class="claim-info">
+        <div class="info-box">
+          <span class="info-label">Claim ID:</span>
+          <span class="info-value">{{ claimId }}</span>
+        </div>
+        <div class="info-box" *ngIf="claimNumber">
+          <span class="info-label">Claim Number:</span>
+          <span class="info-value">{{ claimNumber }}</span>
+        </div>
+        <button class="btn-next" (click)="navigateToStep(2)">Continue to Upload Documents →</button>
+      </div>
+    </div>
+
+    <!-- Step 2: Upload Documents -->
+    <div *ngIf="currentStep === 2" class="step-panel">
+      <h2 class="step-heading">Upload Documents</h2>
+      <p class="step-description">Upload all required documents for claim validation.</p>
+
+      <div *ngIf="!claimId" class="alert-warning">
+        Please create a claim first.
+      </div>
+
+      <div *ngIf="claimId" class="upload-section">
+        <div class="file-upload-item">
+          <label class="file-label">Policy Document *</label>
+          <div class="file-input-wrapper">
+            <input 
+              type="file" 
+              id="policy" 
+              accept=".pdf,.jpg,.jpeg,.png"
+              (change)="onFileSelected($event, 'policy')"
+              [disabled]="isProcessing"
+              class="file-input">
+            <label for="policy" class="file-button" [class.disabled]="isProcessing">Choose File</label>
+            <span class="file-name" *ngIf="policyDocument">{{ policyDocument.name }}</span>
+            <button *ngIf="policyDocument" class="remove-file" (click)="removeFile('policy')" [disabled]="isProcessing">×</button>
+          </div>
+        </div>
+
+        <div class="file-upload-item">
+          <label class="file-label">Claim Form *</label>
+          <div class="file-input-wrapper">
+            <input 
+              type="file" 
+              id="claim" 
+              accept=".pdf,.jpg,.jpeg,.png"
+              (change)="onFileSelected($event, 'claim')"
+              [disabled]="isProcessing"
+              class="file-input">
+            <label for="claim" class="file-button" [class.disabled]="isProcessing">Choose File</label>
+            <span class="file-name" *ngIf="claimForm">{{ claimForm.name }}</span>
+            <button *ngIf="claimForm" class="remove-file" (click)="removeFile('claim')" [disabled]="isProcessing">×</button>
+          </div>
+        </div>
+
+        <div class="file-upload-item">
+          <label class="file-label">Driving License *</label>
+          <div class="file-input-wrapper">
+            <input 
+              type="file" 
+              id="license" 
+              accept=".pdf,.jpg,.jpeg,.png"
+              (change)="onFileSelected($event, 'license')"
+              [disabled]="isProcessing"
+              class="file-input">
+            <label for="license" class="file-button" [class.disabled]="isProcessing">Choose File</label>
+            <span class="file-name" *ngIf="drivingLicense">{{ drivingLicense.name }}</span>
+            <button *ngIf="drivingLicense" class="remove-file" (click)="removeFile('license')" [disabled]="isProcessing">×</button>
+          </div>
+        </div>
+
+        <div class="file-upload-item">
+          <label class="file-label">Aadhaar *</label>
+          <div class="file-input-wrapper">
+            <input 
+              type="file" 
+              id="aadhaar" 
+              accept=".pdf,.jpg,.jpeg,.png"
+              (change)="onFileSelected($event, 'aadhaar')"
+              [disabled]="isProcessing"
+              class="file-input">
+            <label for="aadhaar" class="file-button" [class.disabled]="isProcessing">Choose File</label>
+            <span class="file-name" *ngIf="aadhaar">{{ aadhaar.name }}</span>
+            <button *ngIf="aadhaar" class="remove-file" (click)="removeFile('aadhaar')" [disabled]="isProcessing">×</button>
+          </div>
+        </div>
+
+        <div class="file-upload-item">
+          <label class="file-label">PAN *</label>
+          <div class="file-input-wrapper">
+            <input 
+              type="file" 
+              id="pan" 
+              accept=".pdf,.jpg,.jpeg,.png"
+              (change)="onFileSelected($event, 'pan')"
+              [disabled]="isProcessing"
+              class="file-input">
+            <label for="pan" class="file-button" [class.disabled]="isProcessing">Choose File</label>
+            <span class="file-name" *ngIf="pan">{{ pan.name }}</span>
+            <button *ngIf="pan" class="remove-file" (click)="removeFile('pan')" [disabled]="isProcessing">×</button>
+          </div>
+        </div>
+
+        <div class="file-upload-item">
+          <label class="file-label">Repair Estimate (optional)</label>
+          <div class="file-input-wrapper">
+            <input 
+              type="file" 
+              id="repair" 
+              accept=".pdf,.jpg,.jpeg,.png"
+              (change)="onFileSelected($event, 'repair')"
+              [disabled]="isProcessing"
+              class="file-input">
+            <label for="repair" class="file-button" [class.disabled]="isProcessing">Choose File</label>
+            <span class="file-name" *ngIf="repairEstimate">{{ repairEstimate.name }}</span>
+            <button *ngIf="repairEstimate" class="remove-file" (click)="removeFile('repair')" [disabled]="isProcessing">×</button>
+          </div>
+        </div>
+
+        <div class="upload-status" *ngIf="documentsUploaded">
+          <span class="status-success">✓ Documents uploaded successfully</span>
+        </div>
+
+        <div class="action-buttons">
+          <button class="btn-secondary" (click)="navigateToStep(1)">← Back</button>
+          <button 
+            class="btn-primary" 
+            (click)="uploadDocuments()" 
+            [disabled]="isProcessing || documentsUploaded">
+            {{ isUploadingDocuments ? 'Uploading...' : documentsUploaded ? 'Uploaded' : 'Upload Documents' }}
+          </button>
+          <button 
+            *ngIf="documentsUploaded"
+            class="btn-next" 
+            (click)="navigateToStep(3)">
+            Continue to Upload Images →
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 3: Upload Images -->
+    <div *ngIf="currentStep === 3" class="step-panel">
+      <h2 class="step-heading">Upload Car Images</h2>
+      <p class="step-description">Upload photos of the damaged vehicle from multiple angles (recommended: 10 angles).</p>
+
+      <div *ngIf="!documentsUploaded" class="alert-warning">
+        Please complete document upload first.
+      </div>
+
+      <div *ngIf="documentsUploaded" class="upload-section">
+        <div class="file-upload-item">
+          <label class="file-label">Car Photos (10 angles) *</label>
+          <div class="file-input-wrapper">
+            <input 
+              type="file" 
+              id="images" 
+              accept=".jpg,.jpeg,.png"
+              multiple
+              (change)="onFileSelected($event, 'images')"
+              [disabled]="isProcessing"
+              class="file-input">
+            <label for="images" class="file-button" [class.disabled]="isProcessing">Choose Files</label>
+            <span class="file-name" *ngIf="carImages.length > 0">{{ carImages.length }} file(s) selected</span>
+            <button *ngIf="carImages.length > 0" class="remove-file" (click)="removeFile('images')" [disabled]="isProcessing">×</button>
+          </div>
+        </div>
+
+        <div class="upload-status" *ngIf="imagesUploaded">
+          <span class="status-success">✓ Images uploaded successfully</span>
+        </div>
+
+        <div class="action-buttons">
+          <button class="btn-secondary" (click)="navigateToStep(2)">← Back</button>
+          <button 
+            class="btn-primary" 
+            (click)="uploadImages()" 
+            [disabled]="isProcessing || imagesUploaded">
+            {{ isUploadingImages ? 'Uploading...' : imagesUploaded ? 'Uploaded' : 'Upload Images' }}
+          </button>
+          <button 
+            *ngIf="imagesUploaded"
+            class="btn-next" 
+            (click)="navigateToStep(4)">
+            Continue to Validation →
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 4: Validate & Results -->
+    <div *ngIf="currentStep === 4" class="step-panel">
+      <h2 class="step-heading">Validate Claim & View Results</h2>
+      <p class="step-description">Run validation and view the results.</p>
+
+      <div *ngIf="!imagesUploaded" class="alert-warning">
+        Please complete image upload first.
+      </div>
+
+      <div *ngIf="imagesUploaded" class="validation-section">
+        <div *ngIf="!currentClaim || (currentClaim.status !== 'completed' && currentClaim.status !== 'validated')" class="validation-controls">
+          <button 
+            class="btn-validate" 
+            (click)="validateClaim()" 
+            [disabled]="isProcessing">
+            {{ isValidating ? 'Validating...' : 'Start Validation' }}
+          </button>
+        </div>
+
+        <div *ngIf="currentClaim && (currentClaim.status === 'completed' || currentClaim.status === 'validated')" class="results-section">
+          <!-- Validation Summary -->
+          <div class="validation-summary">
+            <h3 class="subsection-title">Validation Summary</h3>
+            <table class="validation-table">
+              <thead>
+                <tr>
+                  <th>Validation</th>
+                  <th>Status</th>
+                  <th>Confidence</th>
+                  <th>Mismatches</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let result of validationResults">
+                  <td>{{ result.name }}</td>
+                  <td>
+                    <span [class]="getStatusClass(result.status)">
+                      {{ getStatusIcon(result.status) }} 
+                      <span *ngIf="result.status === 'passed'">Passed</span>
+                      <span *ngIf="result.status === 'review'">Review</span>
+                      <span *ngIf="result.status === 'mismatch'">Mismatch</span>
+                    </span>
+                  </td>
+                  <td>{{ formatConfidence(result.confidence) }}</td>
+                  <td>
+                    <div *ngIf="result.mismatches && result.mismatches.length > 0" class="mismatches-list">
+                      <ul class="mismatches-ul">
+                        <li *ngFor="let mismatch of result.mismatches" class="mismatch-item">{{ mismatch }}</li>
+                      </ul>
+                    </div>
+                    <span *ngIf="!result.mismatches || result.mismatches.length === 0" class="no-mismatches">—</span>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Policy Document Details -->
+          <div class="policy-details" *ngIf="policyDetails">
+            <h3 class="subsection-title">Policy Document</h3>
+            <div class="details-grid">
+              <div class="detail-item">
+                <span class="detail-label">Name:</span>
+                <span class="detail-value">{{ policyDetails.name }}</span>
+              </div>
+              <div class="detail-item">
+                <span class="detail-label">Vehicle Reg No.:</span>
+                <span class="detail-value">{{ policyDetails.vehicleRegNo }}</span>
+              </div>
+              <div class="detail-item">
+                <span class="detail-label">Policy Start:</span>
+                <span class="detail-value">{{ policyDetails.policyStart }}</span>
+              </div>
+              <div class="detail-item">
+                <span class="detail-label">Policy Expiry:</span>
+                <span class="detail-value">{{ policyDetails.policyExpiry }}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Image Analysis -->
+          <div class="image-analysis" *ngIf="damageAnalysis">
+            <h3 class="subsection-title">Image Analysis</h3>
+            
+            <!-- Damage Locations -->
+            <div class="damage-locations" *ngIf="damageAnalysis.damage_locations && damageAnalysis.damage_locations.length > 0">
+              <h4 class="damage-subtitle">Damage Locations Detected:</h4>
+              <div class="location-tags">
+                <span *ngFor="let location of damageAnalysis.damage_locations" class="location-tag">{{ location }}</span>
+              </div>
+            </div>
+
+            <!-- Detected Damage Summary -->
+            <div class="detected-damage-summary" *ngIf="damageAnalysis.detected_damage && damageAnalysis.detected_damage.length > 0">
+              <h4 class="damage-subtitle">Detected Damage ({{ damageAnalysis.detected_damage.length }} items):</h4>
+              <div class="damage-items-grid">
+                <div *ngFor="let damage of damageAnalysis.detected_damage" class="damage-item" [class]="'severity-' + damage.severity">
+                  <span class="damage-part">{{ damage.part }}</span>
+                  <span class="damage-severity">{{ damage.severity }}</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Likely Damaged Parts -->
+            <div class="likely-damaged-parts" *ngIf="damageAnalysis.likely_damaged_parts && damageAnalysis.likely_damaged_parts.length > 0">
+              <h4 class="damage-subtitle">Likely Damaged Parts:</h4>
+              <div class="parts-list">
+                <span *ngFor="let part of damageAnalysis.likely_damaged_parts" class="part-tag">{{ part }}</span>
+              </div>
+            </div>
+
+            <!-- Unlikely Damaged Parts -->
+            <div class="unlikely-damaged-parts" *ngIf="damageAnalysis.unlikely_damaged_parts && damageAnalysis.unlikely_damaged_parts.length > 0">
+              <h4 class="damage-subtitle">Unlikely Damaged Parts:</h4>
+              <div class="parts-list">
+                <span *ngFor="let part of damageAnalysis.unlikely_damaged_parts" class="part-tag unlikely">{{ part }}</span>
+              </div>
+            </div>
+
+            <!-- Confidence Score -->
+            <div class="damage-confidence" *ngIf="damageAnalysis.confidence">
+              <span class="confidence-label">Analysis Confidence:</span>
+              <span class="confidence-value">{{ formatConfidence(damageAnalysis.confidence) }}</span>
+            </div>
+          </div>
+
+          <!-- Validation Issues -->
+          <div class="validation-issues" *ngIf="validationIssues.length > 0">
+            <h3 class="subsection-title">Validation Issues</h3>
+            <ul class="issues-list">
+              <li *ngFor="let issue of validationIssues" class="issue-item">{{ issue }}</li>
+            </ul>
+          </div>
+
+          <!-- Validation Warnings -->
+          <div class="validation-warnings" *ngIf="validationWarnings.length > 0">
+            <h3 class="subsection-title">Warnings</h3>
+            <ul class="warnings-list">
+              <li *ngFor="let warning of validationWarnings" class="warning-item">{{ warning }}</li>
+            </ul>
+          </div>
+
+          <!-- Summary -->
+          <div class="summary-section">
+            <h3 class="subsection-title">Summary</h3>
+            <div class="summary-grid">
+              <div class="summary-item">
+                <span class="summary-label">Overall Confidence:</span>
+                <span class="summary-value">{{ formatConfidence(overallConfidence) }}</span>
+              </div>
+              <div class="summary-item">
+                <span class="summary-label">Manual Review Required:</span>
+                <span class="summary-value">{{ formatManualReviewRequired(manualReviewRequired) }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="action-buttons" style="margin-top: 2rem;">
+          <button class="btn-secondary" (click)="navigateToStep(3)">← Back</button>
+          <button class="btn-secondary" (click)="goToClaimsList()">View All Claims</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

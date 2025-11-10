@@ -1,0 +1,60 @@
+<div class="claims-list-container">
+  <div class="header">
+    <h1 class="page-title">Insurance Claims</h1>
+    <button class="btn-create" (click)="createNewClaim()">
+      + Create New Claim
+    </button>
+  </div>
+
+  <div class="claims-content">
+    <div *ngIf="isLoading" class="loading-state">
+      <p>Loading claims...</p>
+    </div>
+
+    <div *ngIf="!isLoading && claims.length === 0" class="empty-state">
+      <p>No claims found. Create your first claim to get started.</p>
+      <button class="btn-create" (click)="createNewClaim()">
+        Create New Claim
+      </button>
+    </div>
+
+    <div *ngIf="!isLoading && claims.length > 0" class="claims-grid">
+      <div 
+        *ngFor="let claim of claims" 
+        class="claim-card"
+        (click)="viewClaim(claim.id)">
+        <div class="claim-header">
+          <div class="claim-id">
+            <span class="label">Claim {{ claim.claim_number ? 'Number' : 'ID' }}:</span>
+            <span class="value">{{ claim.claim_number || claim.id }}</span>
+          </div>
+          <span class="status-badge" [ngClass]="getStatusClass(claim.status)">
+            {{ getStatusLabel(claim.status) }}
+          </span>
+        </div>
+
+        <div class="claim-details">
+          <div class="detail-row">
+            <span class="detail-label">Created:</span>
+            <span class="detail-value">{{ formatDate(claim.createdAt) }}</span>
+          </div>
+
+          <div class="detail-row" *ngIf="claim.policyDetails">
+            <span class="detail-label">Vehicle:</span>
+            <span class="detail-value">{{ claim.policyDetails.vehicleRegNo }}</span>
+          </div>
+
+          <div class="detail-row" *ngIf="claim.overallConfidence">
+            <span class="detail-label">Confidence:</span>
+            <span class="detail-value">{{ (claim.overallConfidence * 100).toFixed(1) }}%</span>
+          </div>
+        </div>
+
+        <div class="claim-footer">
+          <button class="btn-view">View Details →</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
