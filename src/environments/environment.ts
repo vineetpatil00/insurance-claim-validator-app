@@ -1,4 +1,4 @@
 export const environment = {
   production: true,
-  APIUrl: 'http://localhost:4111/api/v1',
+  APIUrl: 'https://insurance-claim-validator-backend.onrender.com/api/v1',
 };
